@@ -1,0 +1,8 @@
+[package]
+name = "erdos_szekeres"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.28.0"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "b1acb58ac96bcdedbf7d12bd49a6d3613fa5b455"}

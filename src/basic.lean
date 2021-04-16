@@ -150,7 +150,7 @@ theorem cons_sub_not_eq
 := begin
   cases h2 with _ _ _ easy _ _ _ _,
   exact easy,
-  exact false.rec (a :: A <+ B) (h1 rfl),
+  exact absurd rfl h1,
 end
 
 theorem drop_while_imp_mem
@@ -214,6 +214,7 @@ theorem sublist_map_exists
         exact ⟨C, list.sublist.cons C A_tl A_hd C_le, C_map⟩, }, } }
 end
 
+@[simp]
 theorem take_while_false_mem
 {X : Type*}
 {A : list X}
@@ -228,6 +229,7 @@ theorem take_while_false_mem
     finish, }
 end
 
+@[simp]
 theorem drop_while_false_mem
 {X : Type*}
 {A : list X}
@@ -405,7 +407,7 @@ theorem subsequences_ending_image
 (R : X → X → Prop) [decidable_rel R]
 (h : transitive R)
 (h1: ∀ (x : list X), ¬(x <+ A ∧ x.length = k ∧ list.pairwise R x))
-: ((subsequences_ending x_le R).to_finset).sup list.length ∈ finset.range k \ {0}
+: (subsequences_ending x_le R).to_finset.sup list.length ∈ finset.range k \ {0}
 := begin
   apply finset.mem_sdiff.mpr,
   split,
@@ -465,8 +467,7 @@ theorem erdos_szekeres
       refine or.inr _,
       all_goals
       { refine ne_of_lt _,
-        rw list.nth_le_map _ hhj hhfj,
-        rw list.nth_le_map _ hhi hhfi,
+        rw [list.nth_le_map _ hhj hhfj, list.nth_le_map _ hhi hhfi],
         simp only [list.nth_le_fin_range], },
       exact subsequences_ending_increasing hhia hhja hh2 (≥) (@ge_trans X _) (le_of_not_ge lt_ind),
       exact subsequences_ending_increasing hhia hhja hh2 (≤) preorder.le_trans lt_ind, },
@@ -484,14 +485,11 @@ theorem erdos_szekeres
     have incl : ∀ x ∈ values, x ∈ poss_values,
     { intros xx xx_in_ttt,
       apply finset.mem_product.mpr,
-      rw finset.mem_def at xx_in_ttt,
-      change xx ∈ ((list.fin_range A.length).map f) at xx_in_ttt,
-      rw list.mem_map at xx_in_ttt,
-      obtain ⟨xx_ind, _, uuuu⟩ := xx_in_ttt,
+      obtain ⟨xx_ind, _, uuuu⟩ := list.mem_map.mp (finset.mem_def.mp xx_in_ttt),
       rw ←uuuu,
       split,
-      exact subsequences_ending_image xx_ind.2 r (≤) preorder.le_trans h_left,
-      exact subsequences_ending_image xx_ind.2 s (≥) (@ge_trans X _) h_right, },
+      { exact subsequences_ending_image xx_ind.2 r (≤) preorder.le_trans h_left },
+      { exact subsequences_ending_image xx_ind.2 s (≥) (@ge_trans X _) h_right }, },
 
     -- By the pigeonhole principle, two pairs must have the same value to fit in the range.
     obtain ⟨x, _, y, _, h⟩ := @finset.exists_ne_map_eq_of_card_lt_of_maps_to _ _ _ _ hc id incl,
@@ -511,7 +509,7 @@ theorem erdos_szekeres
 
 end
 
-theorem erdos_szekeres_single
+theorem erdos_szekeres'
 {X : Type*} [linear_order X]
 (A : list X)
 : ∃ (R : list X), R <+ A ∧ R.length = A.length.sqrt ∧ (R.pairwise (≤) ∨ R.pairwise (≥))
@@ -573,6 +571,7 @@ theorem finset_from_list_properties
     },
 end
 
+/- An indexed version of Erdős–Szekeres theorem -/
 theorem erdos_szekeres''
 {X Y: Type*} [linear_order X] [linear_order Y]
 (r s : ℕ)

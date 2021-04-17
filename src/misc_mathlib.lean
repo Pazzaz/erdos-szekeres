@@ -2,8 +2,6 @@ import data.list
 import tactic
 import data.finset
 
-
-/- A sublist of a prefix (created with take) is a prefix of the whole list -/
 theorem sublist_take_mp_sublist
 {X : Type*}
 (A S: list X)
@@ -17,7 +15,7 @@ theorem nth_le_mem_take_succ
 (A : list X)
 (n : ℕ)
 (h : n < A.length)
-: A.nth_le n h ∈ A.take (n.succ)
+: A.nth_le n h ∈ A.take n.succ
 := begin
   rw list.nth_le_take A h (lt_add_one n),
   exact list.nth_le_mem (list.take n.succ A) n _,
@@ -25,7 +23,7 @@ end
 
 theorem sublist_concat_is_sublist {X : Type*} {l1 l2 : list X} {e : X} (n : ℕ)
   (h_sub : l1 <+ l2.take n) (h_in : e ∈ l2.drop n)
-: (l1.concat e) <+ l2 :=
+: l1.concat e <+ l2 :=
 begin
   rw [list.concat_eq_append, ←list.take_append_drop n l2],
   exact list.sublist.append h_sub (list.singleton_sublist.mpr h_in),
@@ -105,10 +103,9 @@ end
 theorem prod_ne_iff_right_or_left_ne
 {X Y : Type*}
 (a b : X × Y)
-: (a.1 ≠ b.1 ∨ a.2 ≠ b.2) ↔ a ≠ b
+: a.1 ≠ b.1 ∨ a.2 ≠ b.2 ↔ a ≠ b
 := begin
-  cases a,
-  cases b,
+  cases a, cases b,
   simpa [not_and, prod.mk.inj_iff, ne.def] using imp_iff_not_or.symm,
 end
 
@@ -144,9 +141,9 @@ theorem cons_sub_not_eq
 (h2 : a :: A <+ b :: B)
 : a :: A <+ B
 := begin
-  cases h2 with _ _ _ easy _ _ _ _,
-  exact easy,
-  exact absurd rfl h1,
+  cases h2 with _ _ _ e _ _ _ _,
+  { exact e },
+  { exact absurd rfl h1 },
 end
 
 theorem drop_while_imp_mem
@@ -156,29 +153,27 @@ theorem drop_while_imp_mem
 : A.drop_while f = A.drop_while (λ x, x ∈ A → f x)
 := begin
   induction A,
-  dsimp [list.drop_while],
-  exact rfl,
-  dsimp [list.drop_while],
-  have thing : (A_hd ∈ (A_hd :: A_tl) → f A_hd) = f A_hd,
-  { simp, },
-  simp only [thing],
-  have step2 : ∀ x, (x ∈ A_hd :: A_tl → f x) = ((x = A_hd ∨ x ∈ A_tl) → f x),
-  { tauto, },
-  simp only [step2],
+  { exact rfl, },
+  { dsimp [list.drop_while],
+    have thing : (A_hd ∈ (A_hd :: A_tl) → f A_hd) = f A_hd, by simp,
+    have step2 : ∀ x, (x ∈ A_hd :: A_tl → f x) = ((x = A_hd ∨ x ∈ A_tl) → f x),
+    { tauto, },
+    simp only [thing],
+    simp only [step2],
 
-  split_ifs,
-  { rw A_ih,
-    congr,
-    ext,
-    split,
-    { intros dkdkkd huehue,
-      cases huehue,
-      { rw ←huehue at h,
-        exact h, },
-      { exact dkdkkd huehue, }, },
-    { intros juju x_inn,
-      exact juju (or.inr x_inn), }, },
-  { exact ⟨rfl, rfl⟩, }
+    split_ifs,
+    { rw A_ih,
+      congr,
+      ext,
+      split,
+      { intros dkdkkd huehue,
+        cases huehue,
+        { rw ←huehue at h,
+          exact h, },
+        { exact dkdkkd huehue, }, },
+      { intros juju x_inn,
+        exact juju (or.inr x_inn), }, },
+    { exact ⟨rfl, rfl⟩, } },
 end
 
 theorem sublist_map_exists
@@ -190,8 +185,7 @@ theorem sublist_map_exists
 : ∃ C, C <+ A ∧ C.map f = B
 := begin
   induction A generalizing B,
-  { 
-    refine ⟨list.nil, list.nil.nil_sublist, _⟩,
+  { refine ⟨list.nil, list.nil.nil_sublist, _⟩,
     rw list.eq_nil_of_sublist_nil h,
     exact rfl, },
   { rw list.map_cons at h,

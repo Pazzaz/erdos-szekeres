@@ -3,7 +3,7 @@ import tactic
 import data.finset
 import misc_mathlib
 
-/-- Define all subsequences that (1) contain a point and (2) are pairwise following a
+/-- Define all subsequences that (1) ends at an index and (2) are pairwise following a
   relation (This will in our case be `≤` and `≥`). -/
 def subsequences_ending
 {X : Type*} [decidable_eq X]
@@ -29,14 +29,15 @@ theorem is_sublist
   exact ⟨sublist_take_mp_sublist A l n.succ rest, pairw⟩,
 end
 
-theorem contains_last_true
+theorem index_singleton_mem_finset
 {X : Type*} [decidable_eq X]
 {A : list X}
 {n1 : ℕ}
 (h1 : n1 < A.length)
 (r : X → X → Prop) [decidable_rel r]
-: [A.nth_le n1 h1] ∈ subsequences_ending h1 r
+: [A.nth_le n1 h1] ∈ (subsequences_ending h1 r).to_finset
 := begin
+  refine list.mem_to_finset.mpr _,
   dsimp [subsequences_ending],
   rw list.mem_filter,
   split,
@@ -46,15 +47,6 @@ theorem contains_last_true
   { exact ⟨rfl, list.pairwise_singleton r (list.nth_le A n1 h1)⟩, },
 end
 
-theorem contains_last
-{X : Type*} [decidable_eq X]
-{A : list X}
-{n1 : ℕ}
-(h1 : n1 < A.length)
-(r : X → X → Prop) [decidable_rel r]
-: [A.nth_le n1 h1] ∈ (subsequences_ending h1 r).to_finset
-:= list.mem_to_finset.mpr (contains_last_true h1 r)
-
 theorem largest_subsequence_ending_ne_zero
 {X : Type*} [decidable_eq X]
 {A : list X}
@@ -63,7 +55,7 @@ theorem largest_subsequence_ending_ne_zero
 (r : X → X → Prop) [decidable_rel r]
 : ((subsequences_ending h1 r).to_finset).sup list.length ≠ 0
 := begin
-  rw [(finset.insert_eq_of_mem (contains_last h1 r)).symm, finset.sup_insert],
+  rw [(finset.insert_eq_of_mem (index_singleton_mem_finset h1 r)).symm, finset.sup_insert],
   exact ne_of_gt (le_max_left 1 (finset.sup _ list.length)),
 end
 
@@ -106,7 +98,7 @@ theorem subsequences_ending_increasing
     rw c,
     have gflggl : a.length < newer.length := by { rw list.length_concat _ _, exact lt_add_one (list.length a),},
     exact gt_of_ge_of_gt (finset.le_sup newer_in) gflggl, },
-  exact ⟨[A.nth_le n1 h1], contains_last h1 r⟩,
+  exact ⟨[A.nth_le n1 h1], index_singleton_mem_finset h1 r⟩,
 end
 
 theorem subsequence_sup_short_exist
@@ -129,7 +121,7 @@ theorem subsequence_sup_short_exist
       exact nle, },
     { have take_sublist := list.sublist_of_prefix (list.take_prefix nnn aaa),
       exact list.pairwise_of_sublist take_sublist aaa_pairwise, } },
-  exact ⟨[A.nth_le n h], contains_last h R⟩,
+  exact ⟨[A.nth_le n h], index_singleton_mem_finset h R⟩,
 end
 
 theorem subsequences_ending_image
@@ -275,7 +267,7 @@ theorem finset_from_list_properties
 (r1_refl : reflexive r1)
 (f : X → Y)
 (cses : ∃ (Rl : list Y), Rl <+ (A.sort (≤)).map f ∧ Rl.length = r ∧ list.pairwise r1 Rl)
-: ∃ (R : finset X) (H : R ⊆ A), R.card = r ∧ ∀ (x : X), x ∈ R → ∀ (y : X), y ∈ R → x ≤ y → r1 (f x) (f y)
+: ∃ R ⊆ A, R.card = r ∧ ∀ (x ∈ R) (y ∈ R), x ≤ y → r1 (f x) (f y)
 := begin
   let li := (A.sort (≤)).map f,
   have bef_sorted     := finset.sort_sorted (≤) A,
@@ -312,8 +304,8 @@ theorem erdos_szekeres''
 (A : finset X)
 (h : (r-1)*(s-1) < A.card)
 (f : X → Y)
-: (∃ (R ⊆ A), R.card = r ∧ ∀ (x ∈ R) (y ∈ R), x ≤ y → f x ≤ f y)
-∨ (∃ (S ⊆ A), S.card = s ∧ ∀ (x ∈ S) (y ∈ S), x ≤ y → f y ≤ f x)
+: (∃ R ⊆ A, R.card = r ∧ ∀ (x ∈ R) (y ∈ R), x ≤ y → f x ≤ f y)
+∨ (∃ S ⊆ A, S.card = s ∧ ∀ (x ∈ S) (y ∈ S), x ≤ y → f y ≤ f x)
 := begin
   let li := (A.sort (≤)).map f,
   have ye : (r - 1) * (s - 1) < li.length := by { rw [list.length_map, finset.length_sort], exact h, },
